@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:sandbox/theme/themes.dart';
 import '../components/search.dart';
-import '../theme/themes.dart';
 
 class SearchPage extends StatelessWidget {
   static const String _title = 'Search';
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: _title,
-      home: Search(),
-      // theme: ThemeData(
-      //   brightness: Brightness.dark,
-      //   backgroundColor: Colors.blueGrey[50],
-      // ),
-      theme: SlugThemes().getSlugTheme(),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Search for a course or professor: ",
+                style: SlugThemes().homePageButtomTheme(),
+        ),
+        backgroundColor: SlugThemes().accentOne,
+        centerTitle: true,    
+        ),
+        
+      body: Search(),
     );
   }
 }

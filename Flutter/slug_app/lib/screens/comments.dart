@@ -10,60 +10,85 @@ CollectionReference comments =
 
 class CommentsPage extends StatefulWidget {
   @override
-  createState() => new CommentsPageState();
+  createState() => new CommentsPageStateOriginal();
 }
 
-class CommentsPageState extends State<CommentsPage> {
-  List<String> _comments = [];
+class CommentsPageStateOriginal extends State<CommentsPage> {
+  var com;
+  List fireComments = [];
+  final commentController = new TextEditingController();
 
-  void _addComment(String val) {
-    setState(() {
-      _comments.add(val);
-    });
-    comments.add({"comments": val});
-  }
-
-  Widget _buildCommentList() {
+  Widget _buildFirebaseComments() {
     return ListView.builder(itemBuilder: (context, index) {
-      if (index < _comments.length) {
-        return _buildCommentItem(_comments[index]);
-      } else {
-        return Text("No Available Comments");
+      while (index < fireComments.length) {
+        return _buildCommentItem(fireComments[index]);
       }
     });
   }
 
-  Widget _buildFirebaseComments() {
+  List _findFirebaseComments() {
     comments.get().then((querySnapshot) {
-      querySnapshot.docs.forEach((result) {
-        _buildFirebaseComment(result.data());
+      querySnapshot.docs.forEach((doc) {
+        fireComments.add(doc["comment"]);
+        print(fireComments);
       });
     });
-    return Text("Comments Printed");
+    return fireComments;
   }
 
   Widget _buildCommentItem(String comment) {
     return ListTile(title: Text(comment));
   }
 
-  Widget _buildFirebaseComment(Map<String, dynamic> comment) {
-    return ListTile(title: Text(comment[0]));
-  }
-
   @override
-  Widget build(BuildContext contect) {
-    return Scaffold(
+  Widget build(BuildContext context) {
+    return new Scaffold(
         appBar: new AppBar(title: Text("Comments")),
-        body: Column(children: <Widget>[
-          Expanded(child: _buildCommentList()),
-          Expanded(child: _buildFirebaseComments()),
-          TextField(
-            onSubmitted: (String submittedStr) {
-              _addComment(submittedStr);
-            },
-            decoration:
-                InputDecoration(contentPadding: const EdgeInsets.all(20.0)),
-          )
-        ]));
+        body: Column(
+          children: <Widget>[
+            Flexible(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: comments
+                    .orderBy("timestamp", descending: false)
+                    .snapshots(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<QuerySnapshot> snapshot) {
+                  if (snapshot.hasError) {
+                    return Text("Something went wrong");
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Text("Loading");
+                  }
+                  return new ListView(
+                    children:
+                        snapshot.data.docs.map((DocumentSnapshot document) {
+                      return new ListTile(
+                          title: new Text(document.data()["comment"]));
+                    }).toList(),
+                  );
+                },
+              ),
+            ),
+            TextField(
+              controller: commentController,
+              decoration: InputDecoration(hintText: 'Add a comment!'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  com = commentController.text;
+                  commentController.clear();
+                  comments.add({
+                    "comment": com,
+                    "timestamp": FieldValue.serverTimestamp()
+                  });
+                });
+                //_findFirebaseComments();
+                //Text(fireComments.toString());
+              },
+              child: Text('Submit'),
+            ),
+          ],
+        ));
   }
 }

@@ -4,7 +4,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_html/style.dart';
+import 'dart:math';
 import 'package:sandbox/theme/themes.dart';
 import '../screens/profpages.dart';
 
@@ -15,7 +16,8 @@ class Search extends StatefulWidget {
 
 class _SearchState extends State<Search> {
   TextEditingController searchController = TextEditingController();
-  CollectionReference profs = FirebaseFirestore.instance.collection('Fall2011');
+  CollectionReference profs =
+      FirebaseFirestore.instance.collection('Fall2011_Perfect');
   List allResults = [];
   List resultsList = [];
 
@@ -27,8 +29,7 @@ class _SearchState extends State<Search> {
     // professors names to allResults list
     profs.get().then((QuerySnapshot querySnapshot) => {
           querySnapshot.docs.forEach((doc) {
-            // allResults.add(doc["Course Title"]);  // add course names to list
-            allResults.add(doc.id);  // add professor names to list
+            allResults.add(doc.id); // add professor names to list
           })
         });
 
@@ -57,7 +58,7 @@ class _SearchState extends State<Search> {
     if (searchController.text != "") {
       for (var query in allResults) {
         var title = query.toLowerCase();
-        if (title.startsWith(searchController.text.toLowerCase())) {
+        if (title.contains(searchController.text.toLowerCase())) {
           showResults.add(query);
         }
       }
@@ -69,39 +70,40 @@ class _SearchState extends State<Search> {
   }
 
   Widget build(BuildContext context) {
-    return Scaffold(
+    return new Scaffold(
       body: Column(
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.only(left: 30, right: 30, top: 15),
-            child: Text("Search for a course and/or professor: ",
-                style: TextStyle(fontSize: 20)),
-          ),
+          Text('', style: TextStyle(fontSize: 10),),  // spaceholder (new line)
           Padding(
             padding: const EdgeInsets.only(left: 30, right: 30, bottom: 30),
             child: TextFormField(
               controller: searchController,
-              decoration: InputDecoration(prefixIcon: Icon(Icons.search)),
+              decoration: InputDecoration(prefixIcon: Icon(Icons.search), hintText: ' Search'),
+              showCursor: true,
+              cursorColor: SlugThemes().accentThree,
             ),
           ),
+          
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.only(left: 60),
-              itemCount: resultsList.length,
+              itemCount: min(resultsList.length, 20),  // limit to only display <= 20 results
               scrollDirection: Axis.vertical,
               itemBuilder: (context, index) {
                 return TextButton(
-                  child: Text(resultsList[index], style: SlugThemes().medText(),),
-                  
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => ProfPage(
-                                  Professor(resultsList[index], "Fall2011"), )
-                               ));
-                  }
-                );
+                    child: Text(
+                      resultsList[index],
+                      style: SlugThemes().searchTextTheme(),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => ProfPage(
+                                    Professor(
+                                        resultsList[index], "Fall2011_Perfect"),
+                                  )));
+                    });
               },
             ),
           )
